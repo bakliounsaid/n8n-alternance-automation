@@ -1,0 +1,185 @@
+{
+  "name": "Agent recherche alternance",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -336,
+        -16
+      ],
+      "id": "19da6aec-20a2-4e64-a2b1-ed526c7044d9",
+      "name": "When chat message received",
+      "webhookId": "94d4e677-eda2-4d9a-946e-d5228b23dea8"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Tu es l'assistant de recherche d'alternance de Said.\n\nPROFIL DE SAID\n- Étudiant Bac+5 à HETIC, 3+ ans d'expérience en développement back-end\n- Stacks : PHP/Laravel, Python (FastAPI), Java (Spring Boot)\n- Cherche un contrat de professionnalisation, rythme 2 semaines entreprise / 1 semaine école\n\nOUTILS\n- Recherche d'offres : à utiliser pour toute recherche. Ne réponds jamais\n  sur des offres sans l'avoir appelé.\n- Brouillon Gmail : pour préparer une candidature. Ne crée jamais\n  de brouillon sans que Said l'ait demandé.\n\nCHOISIR UNE ENTREPRISE : critères dans cet ordre de priorité\n1. Une vraie offre publiée passe avant une entreprise sans offre.\n2. L'offre doit accepter le contrat de professionnalisation.\n3. Plus l'offre mentionne PHP/Laravel, Python ou Java, mieux c'est.\n4. Le poste doit être du développement, pas du support ni du conseil pur.\nLa notoriété de l'entreprise n'est PAS un critère.\nJustifie toujours ton choix en citant les éléments précis de l'offre\nqui correspondent à chaque critère.\n\nRÈGLES\n- N'invente jamais d'information : utilise uniquement ce que renvoient\n  les outils. Si une info manque, écris \"non précisé\".\n- Dans un brouillon, ne cite que des éléments réellement présents dans\n  l'offre. Pas de formules vagues comme \"vos projets innovants\".\n- Dis toujours clairement qu'un brouillon est un brouillon.\n- Réponds en français, de façon concise, sans conseils non demandés.\nFORMAT DE RÉPONSE (obligatoire pour chaque offre citée)\n**[Titre de l'offre]** — [Entreprise] ([Lieu])\n- Contrat : [types de contrat]\n- Correspondance : [critères validés / partiels]\n- Lien : [URL de candidature]"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        64,
+        -16
+      ],
+      "id": "5c373337-0790-458e-bcaf-bc9b87521484",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        32,
+        144
+      ],
+      "id": "e4551245-2eec-4d45-9f53-074aa27ec4e9",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        128,
+        144
+      ],
+      "id": "73c49f85-8330-4f94-88e8-bd34ea9ffc63",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Recherche de vraies offres d'alternance en France, en temps réel.\nUtilise cet outil dès que l'utilisateur demande des offres.\nParamètres :\n- latitude / longitude : coordonnées GPS de la ville demandée\n  (ex. Paris 48.8566 / 2.3522, Lyon 45.7640 / 4.8357)\n- romes : code métier ROME. Développement informatique = M1805,\n  Conseil en systèmes d'information = M1806, Data = M1405",
+        "url": "https://api.apprentissage.beta.gouv.fr/api/job/v1/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "radius",
+              "value": "30"
+            },
+            {
+              "name": "target_diploma_level",
+              "value": "7"
+            },
+            {
+              "name": "latitude",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', ``, 'string') }}"
+            },
+            {
+              "name": "longitude",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters3_Value', ``, 'string') }}"
+            },
+            {
+              "name": "romes",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        144
+      ],
+      "id": "2fb162ae-a27c-4764-aa1a-350a84712a6a",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Crée un BROUILLON dans le Gmail de Said. N'envoie jamais rien.\nÀ utiliser quand Said demande de préparer une candidature ou un email.\nLe message doit être en français, professionnel, et ne mentionner\nque des informations vraies sur Said et sur l'entreprise.",
+        "resource": "draft",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        144
+      ],
+      "id": "9b6e2cdf-8983-4a21-aca7-c2fbddb64e71",
+      "name": "Create a draft in Gmail",
+      "webhookId": "d0b419e7-4e3c-4df7-b7e8-c421441c3d86"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
